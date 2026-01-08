@@ -1,5 +1,6 @@
 "use client";
 
+
 import {
     Card,
     Table,
@@ -14,7 +15,8 @@ import {
     DonutChart,
     Grid,
 } from "@tremor/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import useSWR from "swr";
 
 interface Task {
     key: string;
@@ -26,6 +28,8 @@ interface Task {
 }
 
 type FilterType = "all" | "In Progress" | "Done" | "To Do";
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 // Helper to extract project from task summary
 function extractProject(summary: string): string {
@@ -47,26 +51,10 @@ function getStatusColor(statusCategory: string): "emerald" | "yellow" | "gray" |
 }
 
 export default function AllocationsPage() {
-    const [tasks, setTasks] = useState<Task[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { data: taskData, isLoading: loading } = useSWR("/api/jira/tasks", fetcher);
     const [filter, setFilter] = useState<FilterType>("all");
 
-    useEffect(() => {
-        async function fetchTasks() {
-            try {
-                const res = await fetch("/api/jira/tasks");
-                if (res.ok) {
-                    const data = await res.json();
-                    setTasks(data.tasks || []);
-                }
-            } catch (error) {
-                console.error("Failed to fetch tasks", error);
-            } finally {
-                setLoading(false);
-            }
-        }
-        fetchTasks();
-    }, []);
+    const tasks: Task[] = taskData?.tasks || [];
 
     // Group tasks by project
     const projectGroups = tasks.reduce((acc: Record<string, Task[]>, task) => {

@@ -52,23 +52,23 @@ module.exports = {
                         inverted: colors.blue[950],
                     },
                     background: {
-                        muted: "#131A2B",
-                        subtle: colors.gray[800],
-                        DEFAULT: colors.gray[900],
-                        emphasis: colors.gray[300],
+                        muted: "#020617", // slate-950
+                        subtle: "#0f172a", // slate-900
+                        DEFAULT: "#0f172a", // slate-900 (Cards)
+                        emphasis: "#e2e8f0", // slate-200 (Text)
                     },
                     border: {
-                        DEFAULT: colors.gray[800],
+                        DEFAULT: "#1e293b", // slate-800
                     },
                     ring: {
-                        DEFAULT: colors.gray[800],
+                        DEFAULT: "#1e293b", // slate-800
                     },
                     content: {
-                        subtle: colors.gray[600],
-                        DEFAULT: colors.gray[500],
-                        emphasis: colors.gray[200],
-                        strong: colors.gray[50],
-                        inverted: colors.gray[950],
+                        subtle: "#94a3b8", // slate-400
+                        DEFAULT: "#cbd5e1", // slate-300
+                        emphasis: "#f8fafc", // slate-50
+                        strong: "#f8fafc", // slate-50
+                        inverted: "#000000",
                     },
                 },
             },

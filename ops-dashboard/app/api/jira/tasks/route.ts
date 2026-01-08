@@ -18,7 +18,7 @@ export async function GET() {
     try {
         // Fetch issues from the DT project using new API
         const jql = encodeURIComponent(`project = ${projectKey} ORDER BY created DESC`);
-        const url = `https://${domain}/rest/api/3/search/jql?jql=${jql}&maxResults=50&fields=summary,status,assignee,priority,created,updated`;
+        const url = `https://${domain}/rest/api/3/search/jql?jql=${jql}&maxResults=50&fields=summary,status,assignee,priority`;
 
         const response = await fetch(url, {
             method: "GET",
@@ -48,8 +48,6 @@ export async function GET() {
             statusCategory: issue.fields.status?.statusCategory?.name || "Unknown",
             assignee: issue.fields.assignee?.displayName || "Unassigned",
             priority: issue.fields.priority?.name || "None",
-            created: issue.fields.created,
-            updated: issue.fields.updated
         }));
 
         return NextResponse.json({

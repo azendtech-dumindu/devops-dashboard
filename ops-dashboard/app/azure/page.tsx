@@ -13,7 +13,7 @@ import {
     TableBody,
     TableCell,
 } from "@tremor/react";
-import { useEffect, useState } from "react";
+import useSWR from "swr";
 
 interface Resource {
     id: string;
@@ -23,6 +23,11 @@ interface Resource {
     location: string;
     resourceGroup: string;
 }
+
+const fetcher = (url: string) => fetch(url).then((res) => {
+    if (!res.ok) throw new Error("Failed to fetch");
+    return res.json();
+});
 
 // Helper to get status badge color based on resource type
 function getTypeColor(type: string): "blue" | "emerald" | "violet" | "amber" | "rose" | "cyan" | "gray" {
@@ -52,55 +57,18 @@ function formatLocation(location: string): string {
 }
 
 export default function AzurePage() {
-    const [resources, setResources] = useState<Resource[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [securityScore, setSecurityScore] = useState<{
-        scorePercentage: number | null;
-        healthy: number;
-        unhealthy: number;
-        loading: boolean;
-    }>({ scorePercentage: null, healthy: 0, unhealthy: 0, loading: true });
+    const { data: resourcesData, error: resourcesError, isLoading: resourcesLoading } = useSWR("/api/azure/resources", fetcher);
+    const { data: securityData, isLoading: securityLoading } = useSWR("/api/azure/security-score", fetcher);
 
-    useEffect(() => {
-        async function fetchResources() {
-            try {
-                const res = await fetch("/api/azure/resources");
-                if (res.ok) {
-                    const data = await res.json();
-                    setResources(data.resources || []);
-                } else {
-                    const errData = await res.json();
-                    setError(errData.details || "Failed to fetch resources");
-                }
-            } catch (err: any) {
-                setError(err.message || "Failed to fetch resources");
-            } finally {
-                setLoading(false);
-            }
-        }
+    const resources: Resource[] = resourcesData?.resources || [];
+    const error = resourcesError ? "Failed to fetch resources" : null;
 
-        async function fetchSecurityScore() {
-            try {
-                const res = await fetch("/api/azure/security-score");
-                if (res.ok) {
-                    const data = await res.json();
-                    setSecurityScore({
-                        scorePercentage: data.scorePercentage,
-                        healthy: data.healthy || 0,
-                        unhealthy: data.unhealthy || 0,
-                        loading: false,
-                    });
-                }
-            } catch (err) {
-                console.error("Failed to fetch security score", err);
-                setSecurityScore(prev => ({ ...prev, loading: false }));
-            }
-        }
-
-        fetchResources();
-        fetchSecurityScore();
-    }, []);
+    const securityScore = {
+        scorePercentage: securityData?.scorePercentage ?? null,
+        healthy: securityData?.healthy || 0,
+        unhealthy: securityData?.unhealthy || 0,
+        loading: securityLoading,
+    };
 
     // Group resources by type for summary
     const typeGroups = resources.reduce((acc: Record<string, number>, res) => {
@@ -128,7 +96,7 @@ export default function AzurePage() {
             <Grid numItemsMd={2} className="mt-6 gap-6">
                 <Card>
                     <Title>Resource Summary</Title>
-                    {loading ? (
+                    {resourcesLoading ? (
                         <div className="h-48 flex items-center justify-center">
                             <Text>Loading...</Text>
                         </div>
@@ -180,9 +148,9 @@ export default function AzurePage() {
             <Card className="mt-6">
                 <div className="flex justify-between items-center">
                     <Title>Resource Inventory</Title>
-                    {!loading && <Badge color="blue">{resources.length} resources</Badge>}
+                    {!resourcesLoading && <Badge color="blue">{resources.length} resources</Badge>}
                 </div>
-                {loading ? (
+                {resourcesLoading ? (
                     <div className="h-48 flex items-center justify-center">
                         <Text>Loading resources from Azure...</Text>
                     </div>

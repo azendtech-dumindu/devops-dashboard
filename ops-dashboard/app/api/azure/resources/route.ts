@@ -4,18 +4,7 @@ import { ResourceManagementClient } from "@azure/arm-resources";
 
 export const dynamic = 'force-dynamic';
 
-let cache = {
-    data: null as any,
-    lastFetched: 0
-};
-const CACHE_DURATION = 1000 * 60 * 10; // 10 minutes
-
 export async function GET() {
-    // Check cache
-    if (cache.data && (Date.now() - cache.lastFetched < CACHE_DURATION)) {
-        return NextResponse.json(cache.data);
-    }
-
     try {
         const credential = new DefaultAzureCredential();
         const subscriptionId = "b2a80749-7cd2-4ef4-bb5b-fab5b010f275";
@@ -47,10 +36,11 @@ export async function GET() {
             resources
         };
 
-        cache.data = responseData;
-        cache.lastFetched = Date.now();
-
-        return NextResponse.json(responseData);
+        return NextResponse.json(responseData, {
+            headers: {
+                'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=30'
+            }
+        });
 
     } catch (error: any) {
         console.error("AZURE API ERROR [Resources]:", error.message);

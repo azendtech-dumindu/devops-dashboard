@@ -16,9 +16,9 @@ export async function GET() {
         return NextResponse.json(cache.data);
     }
 
-    // Date Logic: Fetch from January 2025 to now
+    // Date Logic: Fetch last 11 months (Azure API has 1-year limit)
     const now = new Date();
-    const fromDate = new Date("2025-01-01"); // Start from January 2025
+    const fromDate = new Date(now.getFullYear(), now.getMonth() - 11, 1); // Start from 11 months ago
 
     let debugInfo: any = {};
     try {
@@ -134,14 +134,19 @@ export async function GET() {
             });
         }
 
-        // Sort by date, then by absolute diff for same month
-        const changes = allChanges
-            .sort((a, b) => {
-                if (a.month !== b.month) {
-                    return a.month.localeCompare(b.month); // Chronological order
-                }
-                return Math.abs(b.diff) - Math.abs(a.diff); // Within same month, biggest first
-            });
+        // Group by month and select only the highest absolute change per month
+        const monthlyTopChanges = new Map<string, any>();
+
+        allChanges.forEach(change => {
+            const existing = monthlyTopChanges.get(change.month);
+            if (!existing || Math.abs(change.diff) > Math.abs(existing.diff)) {
+                monthlyTopChanges.set(change.month, change);
+            }
+        });
+
+        // Convert to array and sort by date (descending - newest first)
+        const changes = Array.from(monthlyTopChanges.values())
+            .sort((a, b) => b.month.localeCompare(a.month));
 
         const formattedChanges = changes.map(c => {
             const isIncrease = c.diff > 0;

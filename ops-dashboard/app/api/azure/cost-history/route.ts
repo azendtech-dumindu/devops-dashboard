@@ -4,27 +4,16 @@ import { CostManagementClient } from "@azure/arm-costmanagement";
 
 export const dynamic = 'force-dynamic';
 
-let cache = {
-    data: null as any,
-    lastFetched: 0
-};
-const CACHE_DURATION = 1000 * 60 * 15; // 15 minutes
-
 export async function GET() {
-    // Check cache
-    if (cache.data && (Date.now() - cache.lastFetched < CACHE_DURATION)) {
-        return NextResponse.json(cache.data);
-    }
-
     try {
         const credential = new DefaultAzureCredential();
         const subscriptionId = "b2a80749-7cd2-4ef4-bb5b-fab5b010f275";
         const client = new CostManagementClient(credential);
 
-        // Calculate dates: January 2025 to now
+        // Calculate dates: Last 11 months (Azure API has 1-year limit)
         const now = new Date();
         const endDate = new Date(now);
-        const startDate = new Date("2025-01-01"); // Start from January 2025
+        const startDate = new Date(now.getFullYear(), now.getMonth() - 11, 1); // Start from 11 months ago
 
         // Format for API (ISO string)
         // Note: Cost Management usually expects specific timeframe or custom range
@@ -96,10 +85,12 @@ export async function GET() {
         const cleanHistory = history.map(({ rawDate, ...rest }) => rest);
 
         const responseData = { history: cleanHistory };
-        cache.data = responseData;
-        cache.lastFetched = Date.now();
 
-        return NextResponse.json(responseData);
+        return NextResponse.json(responseData, {
+            headers: {
+                'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=600' // Cache for 1 hour
+            }
+        });
 
     } catch (error: any) {
         console.error("AZURE API ERROR [History]:", JSON.stringify(error, null, 2));
