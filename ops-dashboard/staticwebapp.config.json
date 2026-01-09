@@ -1,21 +1,5 @@
 {
-    "navigationFallback": {
-        "rewrite": "/index.html",
-        "exclude": [
-            "/_next/*",
-            "/api/*",
-            "*.{css,scss,js,png,gif,ico,jpg,svg,json}"
-        ]
-    },
     "platform": {
-        "apiRuntime": "node:18"
-    },
-    "routes": [
-        {
-            "route": "/api/*",
-            "allowedRoles": [
-                "anonymous"
-            ]
-        }
-    ]
+        "apiRuntime": "node:20"
+    }
 }
