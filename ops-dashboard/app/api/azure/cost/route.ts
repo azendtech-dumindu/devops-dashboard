@@ -15,12 +15,10 @@ export async function GET() {
 
         // Calculate billing period (Month to Date)
         const now = new Date();
-        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         const today = new Date();
 
-        // Azure Cost Management Query
-        // Querying for PreTaxCost aggregated over time
-        const result = await client.query.usage(
+        // Query for Current Month (Actual)
+        const currentResult = await client.query.usage(
             `subscriptions/${subscriptionId}`,
             {
                 type: "Usage",
@@ -37,10 +35,38 @@ export async function GET() {
             }
         );
 
-        const actualCost = result.rows?.[0]?.[0] || 0;
+        // Calculate Last Month range
+        const firstDayOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const lastDayOfLastMonth = new Date(firstDayOfCurrentMonth);
+        lastDayOfLastMonth.setDate(0); // Last day of previous month
+        const firstDayOfLastMonth = new Date(lastDayOfLastMonth.getFullYear(), lastDayOfLastMonth.getMonth(), 1);
+
+        // Query for Last Month (Actual) - using Custom timeframe
+        const lastMonthResult = await client.query.usage(
+            `subscriptions/${subscriptionId}`,
+            {
+                type: "Usage",
+                timeframe: "Custom",
+                timePeriod: {
+                    from: firstDayOfLastMonth,
+                    to: lastDayOfLastMonth
+                },
+                dataset: {
+                    granularity: "None",
+                    aggregation: {
+                        totalCost: {
+                            name: "PreTaxCost",
+                            function: "Sum",
+                        },
+                    },
+                },
+            }
+        );
+
+        const actualCost = currentResult.rows?.[0]?.[0] || 0;
+        const lastMonthCost = lastMonthResult.rows?.[0]?.[0] || 0;
 
         // Simple Linear Forecast
-        // (Current Cost / Days Passed) * Total Days in Month
         const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
         const daysPassed = today.getDate();
         const runRate = daysPassed > 0 ? actualCost / daysPassed : 0;
@@ -49,7 +75,8 @@ export async function GET() {
         return NextResponse.json({
             actualCost,
             forecastCost,
-            currency: result.columns?.[0]?.name || "USD", // Usually derived from column metadata
+            lastMonthCost,
+            currency: currentResult.columns?.[0]?.name || "USD",
         });
 
     } catch (error: any) {
