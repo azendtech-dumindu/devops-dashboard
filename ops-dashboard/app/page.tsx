@@ -39,15 +39,6 @@ export default function Home() {
 
   const allKpis = [
     {
-      id: "tasks",
-      title: "Projects",
-      metric: jiraLoading ? null : projectCount.toString(),
-      progress: completionPercent,
-      target: `${tasks.length} tasks`,
-      href: "/task-allocations",
-      loading: jiraLoading,
-    },
-    {
       id: "spend",
       title: "Cost",
       metric: costLoading ? null : `$${forecastCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
@@ -178,11 +169,6 @@ function KpiCard({ item }: { item: any }) {
             {isCost ? item.actual : item.target}
           </p>
         </div>
-        {!isCost && (
-          <div className="flex justify-between mb-1">
-            <p className="text-xs text-tremor-content">{item.progress}%</p>
-          </div>
-        )}
         <ProgressBar value={item.progress} className="mt-1" color={isCost ? "blue" : "emerald"} />
       </div>
     </Card>

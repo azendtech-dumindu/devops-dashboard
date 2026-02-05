@@ -1,5 +1,7 @@
 "use client";
 
+import { use, useState } from "react";
+
 import {
     Card,
     Badge,
@@ -13,7 +15,6 @@ import {
 import useSWR from "swr";
 import { ArrowLeft, GitBranch, Clock, ExternalLink, ChevronDown, ChevronUp, ShieldCheck, Search, Activity, AlertCircle, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
-import { use, useState } from "react";
 
 const fetcher = (url: string) => fetch(url).then((res) => {
     if (!res.ok) throw new Error("Failed to fetch");
@@ -150,6 +151,16 @@ export default function ProjectPage({ params }: { params: Promise<{ projectName:
                         Environment Health
                     </p>
                     <EnvironmentHealth />
+                </div>
+            )}
+
+            {/* Tech Stack Section - Only for Saral */}
+            {decodedName === "Saral" && (
+                <div className="mb-8">
+                    <p className="text-sm font-medium text-tremor-content dark:text-dark-tremor-content mb-4">
+                        Tech Stack
+                    </p>
+                    <TechStack />
                 </div>
             )}
 
@@ -351,42 +362,239 @@ function EnvironmentHealth() {
     if (error || !data) return null;
 
     const environments = data.environments || [];
+    const lastChecked = data.timestamp ? new Date(data.timestamp).toLocaleTimeString() : null;
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {environments.map((env: any) => (
-                <Card key={env.name} className="p-4 bg-gray-50 dark:bg-gray-900 border-none shadow-none">
-                    <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm font-bold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                            {env.name}
-                        </p>
-                    </div>
+        <div>
+            {lastChecked && (
+                <p className="text-xs text-gray-400 mb-2 flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    Last checked: {lastChecked}
+                </p>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                {environments.map((env: any) => (
+                    <Card key={env.name} className="p-4 bg-gray-50 dark:bg-gray-900 border-none shadow-none">
+                        <div className="flex items-center justify-between mb-2">
+                            <p className="text-sm font-bold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                                {env.name}
+                            </p>
+                        </div>
 
-                    <div className="space-y-2">
-                        {/* Frontend Status */}
-                        <div className="flex items-center justify-between">
-                            <span className="text-xs text-tremor-content dark:text-dark-tremor-content">App</span>
-                            <div className="flex items-center gap-2">
-                                <span className="text-[10px] text-gray-400">{env.responseTime ? `${env.responseTime}ms` : '-'}</span>
+                        <div className="space-y-2">
+                            {/* Frontend Status */}
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs text-tremor-content dark:text-dark-tremor-content">
+                                    App <span className="text-[8px] text-gray-400">{env.responseTime || ''}</span>
+                                </span>
                                 <Badge color={env.status === "healthy" ? "emerald" : "red"} size="xs">
                                     {env.status === "healthy" ? "Online" : "Offline"}
                                 </Badge>
                             </div>
-                        </div>
 
-                        {/* Backend Status */}
-                        <div className="flex items-center justify-between">
-                            <span className="text-xs text-tremor-content dark:text-dark-tremor-content">API</span>
-                            <div className="flex items-center gap-2">
-                                <span className="text-[10px] text-gray-400">{env.backendResponseTime ? `${env.backendResponseTime}ms` : '-'}</span>
+                            {/* Backend Status */}
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs text-tremor-content dark:text-dark-tremor-content">
+                                    API <span className="text-[8px] text-gray-400">{env.backendResponseTime || ''}</span>
+                                </span>
                                 <Badge color={env.backendStatus === "healthy" ? "emerald" : "red"} size="xs">
                                     {env.backendStatus === "healthy" ? "Online" : "Offline"}
                                 </Badge>
                             </div>
                         </div>
+                    </Card>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function TechStack() {
+    const { data, isLoading, error } = useSWR("/api/azure/tech-stack", fetcher, {
+        revalidateOnFocus: false,
+    });
+
+    const [scanData, setScanData] = useState<any>(null);
+    const [scanning, setScanning] = useState(false);
+    const [scanError, setScanError] = useState<string | null>(null);
+
+    const runScan = async () => {
+        setScanning(true);
+        setScanError(null);
+        try {
+            const res = await fetch("/api/azure/security-scan");
+            if (!res.ok) throw new Error("Scan failed");
+            const data = await res.json();
+            setScanData(data);
+        } catch (err: any) {
+            setScanError(err.message);
+        } finally {
+            setScanning(false);
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[1, 2, 3].map((i) => (
+                    <Card key={i} className="animate-pulse bg-gray-50 dark:bg-gray-900 border-none shadow-none p-4">
+                        <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-24 mb-3"></div>
+                        <div className="space-y-2">
+                            <div className="h-3 bg-gray-200 dark:bg-gray-800 rounded w-32"></div>
+                            <div className="h-3 bg-gray-200 dark:bg-gray-800 rounded w-28"></div>
+                        </div>
+                    </Card>
+                ))}
+            </div>
+        );
+    }
+
+    if (error || !data || !data.techStack) {
+        return (
+            <Card className="p-4 bg-gray-50 dark:bg-gray-900 border-none shadow-none">
+                <p className="text-sm text-gray-500">Failed to load tech stack</p>
+            </Card>
+        );
+    }
+
+    const techStack = data.techStack as { category: string; name: string; version: string; type: string }[];
+
+    // Group by category
+    const categories = ["Frontend", "Backend", "Infrastructure"];
+    const grouped = categories.reduce((acc, cat) => {
+        acc[cat] = techStack.filter(item => item.category === cat);
+        return acc;
+    }, {} as Record<string, typeof techStack>);
+
+    // Get vulnerability status for a package
+    const getVulnStatus = (pkgName: string) => {
+        if (!scanData?.results) return null;
+        return scanData.results.find((r: any) => r.package === pkgName);
+    };
+
+    const getBadgeColor = (status: string | undefined, hasVuln: boolean) => {
+        if (!scanData) return "blue";
+        if (status === "critical") return "red";
+        if (status === "warning") return "yellow";
+        if (status === "safe") return "emerald";
+        return "gray";
+    };
+
+    return (
+        <div>
+            {/* Scan Button and Summary */}
+            <div className="flex items-center justify-between mb-4">
+                <button
+                    onClick={runScan}
+                    disabled={scanning}
+                    className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-md transition-colors flex items-center gap-2"
+                >
+                    {scanning ? (
+                        <>
+                            <span className="animate-spin">⟳</span>
+                            Scanning...
+                        </>
+                    ) : (
+                        <>🔍 Scan for Vulnerabilities</>
+                    )}
+                </button>
+
+                {scanData?.summary && (
+                    <div className="flex items-center gap-2 text-xs">
+                        {scanData.summary.critical > 0 && (
+                            <Badge color="red" size="xs">{scanData.summary.critical} critical</Badge>
+                        )}
+                        {scanData.summary.warning > 0 && (
+                            <Badge color="yellow" size="xs">{scanData.summary.warning} warnings</Badge>
+                        )}
+                        {scanData.summary.safe > 0 && (
+                            <Badge color="emerald" size="xs">{scanData.summary.safe} safe</Badge>
+                        )}
+                        {scanData.cached && (
+                            <span className="text-gray-400">(cached)</span>
+                        )}
                     </div>
-                </Card>
-            ))}
+                )}
+            </div>
+
+            {scanError && (
+                <p className="text-xs text-red-500 mb-2">Error: {scanError}</p>
+            )}
+
+            {/* Tech Stack Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {categories.map((category) => (
+                    <Card key={category} className="p-4 bg-gray-50 dark:bg-gray-900 border-none shadow-none">
+                        <p className="text-sm font-bold text-tremor-content-strong dark:text-dark-tremor-content-strong mb-3">
+                            {category}
+                        </p>
+                        {grouped[category].length === 0 ? (
+                            <p className="text-xs text-gray-400">No items found</p>
+                        ) : (
+                            <div className="space-y-2">
+                                {grouped[category].map((item, idx) => {
+                                    const vulnStatus = getVulnStatus(item.name);
+                                    const vulnCount = vulnStatus?.vulnerabilities?.length || 0;
+
+                                    return (
+                                        <div key={idx} className="flex items-center justify-between">
+                                            <span className="text-xs text-tremor-content dark:text-dark-tremor-content flex items-center gap-1">
+                                                {item.name}
+                                                {vulnCount > 0 && (
+                                                    <span className="text-[10px] text-red-500">({vulnCount})</span>
+                                                )}
+                                            </span>
+                                            <Badge color={getBadgeColor(vulnStatus?.status, vulnCount > 0)} size="xs">
+                                                {item.version}
+                                            </Badge>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </Card>
+                ))}
+            </div>
+
+            {/* Vulnerability Details */}
+            {scanData?.results?.some((r: any) => r.vulnerabilities?.length > 0) && (
+                <div className="mt-4">
+                    <p className="text-sm font-medium text-tremor-content dark:text-dark-tremor-content mb-2">
+                        Vulnerabilities Found
+                    </p>
+                    <div className="space-y-2">
+                        {scanData.results
+                            .filter((r: any) => r.vulnerabilities?.length > 0)
+                            .map((result: any) => (
+                                <Card key={result.package} className="p-3 bg-red-50 dark:bg-red-900/20 border-none shadow-none">
+                                    <p className="text-xs font-bold text-red-700 dark:text-red-400 mb-1">
+                                        {result.package} {result.version}
+                                    </p>
+                                    <div className="space-y-1">
+                                        {result.vulnerabilities.slice(0, 3).map((vuln: any) => (
+                                            <div key={vuln.id} className="text-[11px] text-red-600 dark:text-red-300">
+                                                <span className="font-mono">{vuln.id}</span>
+                                                {vuln.severity !== "unknown" && (
+                                                    <span className="ml-1 opacity-70">({vuln.severity})</span>
+                                                )}
+                                                {vuln.fixed && (
+                                                    <span className="ml-1 text-green-600 dark:text-green-400">
+                                                        → fix: {vuln.fixed}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        ))}
+                                        {result.vulnerabilities.length > 3 && (
+                                            <p className="text-[10px] text-red-500">
+                                                +{result.vulnerabilities.length - 3} more
+                                            </p>
+                                        )}
+                                    </div>
+                                </Card>
+                            ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

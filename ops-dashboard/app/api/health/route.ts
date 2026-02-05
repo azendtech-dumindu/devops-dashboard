@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 export const dynamic = 'force-dynamic';
 
 const ENVIRONMENTS = [
+    { name: "ey1", url: "https://ey1.saral.digital", backendUrl: "https://api-ey1.saral.digital/swagger/index.html" },
     { name: "Aqua", url: "https://aqua.saral.digital", backendUrl: "https://api-aqua.saral.digital/health" },
     { name: "Aer", url: "https://aer.saral.digital", backendUrl: "https://api-aer.saral.digital/health" },
     { name: "Ignis", url: "https://ignis.saral.digital", backendUrl: "https://api-ignis.saral.digital/health" },

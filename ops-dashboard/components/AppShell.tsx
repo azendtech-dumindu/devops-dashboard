@@ -112,6 +112,40 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                             })}
                         </div>
 
+                        {/* Executive Summary Cards Section */}
+                        <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Executive Summary Cards</h3>
+                            <p className="text-xs text-gray-500 mb-4">Toggle KPI cards on the homepage.</p>
+                            <div className="space-y-1">
+                                {/* Cost Card toggle */}
+                                <label className="flex items-center p-3 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                                    <input
+                                        type="checkbox"
+                                        checked={visibleModules.has("spend")}
+                                        onChange={() => toggleModule("spend")}
+                                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    />
+                                    <DollarSign className="h-5 w-5 ml-3 text-green-500" />
+                                    <span className="ml-3 text-sm font-medium text-gray-900 dark:text-white">
+                                        Cost Card
+                                    </span>
+                                </label>
+                                {/* Defense Card toggle */}
+                                <label className="flex items-center p-3 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                                    <input
+                                        type="checkbox"
+                                        checked={visibleModules.has("azure")}
+                                        onChange={() => toggleModule("azure")}
+                                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    />
+                                    <Server className="h-5 w-5 ml-3 text-blue-500" />
+                                    <span className="ml-3 text-sm font-medium text-gray-900 dark:text-white">
+                                        Defense Card
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+
                         <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
                             <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Appearance</h3>
                             <div className="flex gap-2">
@@ -132,7 +166,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                 ))}
                             </div>
                         </div>
-
                         <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
                             <div className="flex items-center justify-between mb-3">
                                 <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Visible Projects</h3>
@@ -152,37 +185,27 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                     </button>
                                 </div>
                             </div>
-                            <p className="text-xs text-gray-500 mb-4">Select which Azure DevOps projects to show on the Projects page.</p>
-                            {projectsLoading ? (
-                                <div className="flex items-center justify-center py-4">
-                                    <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-                                    <span className="ml-2 text-sm text-gray-500">Loading projects...</span>
-                                </div>
-                            ) : allProjects.length === 0 ? (
-                                <p className="text-sm text-gray-500 text-center py-4">No projects found. Configure Azure DevOps credentials.</p>
-                            ) : (
-                                <div className="max-h-48 overflow-y-auto space-y-1">
-                                    {allProjects.map((project: any) => (
-                                        <label
-                                            key={project.id}
-                                            className="flex items-center p-2 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                checked={visibleProjects.has(project.name)}
-                                                onChange={() => toggleProject(project.name)}
-                                                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                            />
-                                            <FolderGit2 className="h-4 w-4 ml-3 text-gray-400" />
-                                            <span className="ml-2 text-sm text-gray-900 dark:text-white">
-                                                {project.name}
-                                            </span>
-                                        </label>
-                                    ))}
-                                </div>
-                            )}
+                            <p className="text-xs text-gray-500 mb-4">Select which projects to show on the dashboard.</p>
+                            <div className="space-y-1">
+                                {allProjects.map((project: any) => (
+                                    <label
+                                        key={project.id}
+                                        className="flex items-center p-2 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={visibleProjects.has(project.name)}
+                                            onChange={() => toggleProject(project.name)}
+                                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                        />
+                                        <Briefcase className="h-4 w-4 ml-3 text-gray-400" />
+                                        <span className="ml-2 text-sm text-gray-900 dark:text-white">
+                                            {project.name}
+                                        </span>
+                                    </label>
+                                ))}
+                            </div>
                         </div>
-
                         <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
                             <button
                                 onClick={showAll}

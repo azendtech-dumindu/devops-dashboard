@@ -101,9 +101,8 @@ export default function ProjectsPage() {
                 ) : filteredProjects.length === 0 ? (
                     <Card>
                         <div className="h-48 flex items-center justify-center flex-col">
-                            <Settings className="h-8 w-8 text-gray-400 mb-3" />
-                            <p className="text-tremor-content dark:text-dark-tremor-content">No projects selected</p>
-                            <p className="text-xs text-gray-400 mt-2">Go to Settings to select which projects to display</p>
+                            <FolderGit2 className="h-8 w-8 text-gray-400 mb-3" />
+                            <p className="text-tremor-content dark:text-dark-tremor-content">No relevant projects found.</p>
                         </div>
                     </Card>
                 ) : (

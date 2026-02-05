@@ -4,8 +4,19 @@ import { CostManagementClient } from "@azure/arm-costmanagement";
 
 export const dynamic = 'force-dynamic';
 
+// In-memory cache to prevent rate limiting
+let costCache: { data: any; timestamp: number } | null = null;
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
 export async function GET() {
     try {
+        // Return cached data if still valid
+        if (costCache && Date.now() - costCache.timestamp < CACHE_TTL_MS) {
+            return NextResponse.json(costCache.data, {
+                headers: { 'X-Cache': 'HIT' }
+            });
+        }
+
         const credential = new DefaultAzureCredential();
         // Use the specific subscription ID found earlier or env var
         const subscriptionId = "b2a80749-7cd2-4ef4-bb5b-fab5b010f275";
@@ -72,11 +83,18 @@ export async function GET() {
         const runRate = daysPassed > 0 ? actualCost / daysPassed : 0;
         const forecastCost = runRate * daysInMonth;
 
-        return NextResponse.json({
+        const responseData = {
             actualCost,
             forecastCost,
             lastMonthCost,
             currency: currentResult.columns?.[0]?.name || "USD",
+        };
+
+        // Store in cache
+        costCache = { data: responseData, timestamp: Date.now() };
+
+        return NextResponse.json(responseData, {
+            headers: { 'X-Cache': 'MISS' }
         });
 
     } catch (error: any) {

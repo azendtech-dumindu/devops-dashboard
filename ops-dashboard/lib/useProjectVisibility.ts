@@ -55,53 +55,49 @@ let projectsInitialized = false;
 export function useProjectVisibility() {
     const projects = useSyncExternalStore(subscribeProjects, getProjectSnapshot, getProjectServerSnapshot);
     const [mounted, setMounted] = useState(false);
-    const [allProjects, setAllProjects] = useState<{ id: string; name: string }[]>([]);
-    const [loading, setLoading] = useState(true);
+    const forcedProjects = ["Saral", "Soliyana"];
 
-    // Load from localStorage on mount (only once globally)
+    // Initialize allProjects with forced projects
+    const [allProjects] = useState<{ id: string; name: string }[]>(
+        forcedProjects.map(name => ({ id: name, name }))
+    );
+    const [loading, setLoading] = useState(false);
+
+    // Initial load from storage, filtered by forced projects
     useEffect(() => {
         if (!projectsInitialized) {
             projectsInitialized = true;
-            visibleProjects = loadProjectsFromStorage();
+            const saved = loadProjectsFromStorage();
+            // Fallback to both if none saved or invalid saved state
+            if (saved.length === 0) {
+                visibleProjects = forcedProjects;
+            } else {
+                // Only keep projects that are in our forced list
+                visibleProjects = saved.filter(p => forcedProjects.includes(p));
+                if (visibleProjects.length === 0) visibleProjects = forcedProjects;
+            }
             emitProjectChange();
         }
         setMounted(true);
     }, []);
 
-    // Fetch all projects from API
-    useEffect(() => {
-        async function fetchProjects() {
-            try {
-                const response = await fetch("/api/azure/projects");
-                if (response.ok) {
-                    const data = await response.json();
-                    const projectList = data.projects || [];
-                    setAllProjects(projectList);
-                    allProjectsCache = projectList.map((p: any) => p.name);
-
-                    // If no projects are selected yet, don't auto-select any
-                    // User must explicitly choose which to show
-                }
-            } catch (error) {
-                console.error("Failed to fetch projects:", error);
-            } finally {
-                setLoading(false);
-            }
-        }
-        fetchProjects();
-    }, []);
-
-    const visibleProjectSet = new Set(projects);
-
     const toggleProject = useCallback((projectName: string) => {
-        const newProjects = visibleProjectSet.has(projectName)
-            ? projects.filter(name => name !== projectName)
-            : [...projects, projectName];
-        saveProjectsToStorage(newProjects);
-    }, [projects, visibleProjectSet]);
+        if (!forcedProjects.includes(projectName)) return;
+
+        const currentVisible = new Set(projects);
+        let nextVisible: string[];
+
+        if (currentVisible.has(projectName)) {
+            nextVisible = projects.filter(name => name !== projectName);
+        } else {
+            nextVisible = [...projects, projectName];
+        }
+
+        saveProjectsToStorage(nextVisible);
+    }, [projects]);
 
     const showAllProjects = useCallback(() => {
-        saveProjectsToStorage([...allProjectsCache]);
+        saveProjectsToStorage(forcedProjects);
     }, []);
 
     const hideAllProjects = useCallback(() => {
@@ -109,11 +105,11 @@ export function useProjectVisibility() {
     }, []);
 
     const isProjectVisible = useCallback((projectName: string) => {
-        return visibleProjectSet.has(projectName);
-    }, [visibleProjectSet]);
+        return new Set(projects).has(projectName);
+    }, [projects]);
 
     return {
-        visibleProjects: visibleProjectSet,
+        visibleProjects: new Set(projects),
         visibleProjectsList: projects,
         allProjects,
         mounted,
